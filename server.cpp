@@ -78,17 +78,17 @@ class StopI: public Stop
     }
 
     arrivals getArrivals(const ::Ice::Current& current){
-        arrivals my_arrivals;
+        arrivals stop_arrivals;
         for(auto line : getLines(current)){
             for(auto tram: line->getTrams()){
                 for(auto si: tram->getSchedule()){
                     if(si.stop->ice_getIdentity()==current.id){
-                        my_arrivals.push_back(ArrivalInfoItem{.tram=tram, .time=si.time});
+                        stop_arrivals.push_back(ArrivalInfoItem{.tram=tram, .time=si.time});
                     }
                 }
             }
         }
-        return my_arrivals;
+        return stop_arrivals;
     }
 
     void registerUser(UserPrxPtr user, const ::Ice::Current& current){
@@ -203,7 +203,7 @@ main(int argc, char* argv[])
             for(int iter=0;iter<line_stops.size();iter++){
                 line_stops[iter]->updateUsers(stop_proxies[iter]);
             }
-            this_thread::sleep_for(3s);
+            this_thread::sleep_for(12s);
         }
     }
     catch(const std::exception& e)

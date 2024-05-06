@@ -5,6 +5,7 @@
 #include <Ice/Initialize.h>
 #include <thread>
 #include <Ice/Proxy.h>
+#include <cstdlib>
 
 using namespace std;
 using namespace MPK;
@@ -67,10 +68,9 @@ public:
 
     void createSchedule(){
         auto stops=currentLine->getStops();
-       //
        int offset=0;
         for(auto stop:stops){
-            offset+=1200;
+            offset+=10;
             tram_shedule.push_back(ScheduleItem{.stop=stop,.time=createTIme(startTime,offset)});
         }
 
@@ -121,30 +121,27 @@ int main(int argc, char* argv[]){
          });
 
         if(argc < 5){
-            cout << "Incorrect invocation parameters SERVER_ADDR SERVER_PORT SERVER_NAME PORT>" << endl;
+            cout << "Incorrect invocation parameters SERVER_ADDR SERVER_PORT SERVER_NAME PORT TRAM_ID>" << endl;
+            return 1;
+        }
+
+        int train_id;
+        try{
+            train_id = stoi(argv[5]);
+        }catch (const std::invalid_argument& e) {
+            cout << "Incorrect invocation parameters SERVER_ADDR SERVER_PORT SERVER_NAME PORT TRAM_ID>" << endl;
+            return 1;
+        } catch (const std::out_of_range& e) {
+            cout << "Incorrect invocation parameters SERVER_ADDR SERVER_PORT SERVER_NAME PORT TRAM_ID>" << endl;
             return 1;
         }
 
         auto adapter = ich->createObjectAdapterWithEndpoints("", string("default -p ").append(argv[4]));
         auto sip_proxy = Ice::checkedCast<SIPPrx>(ich->stringToProxy(string(argv[3]).append(":default -h ").append(argv[1]).append(" -p ").append(argv[2])));
         auto lines = sip_proxy->getLines();
-        int tram_id;
         unsigned line_inedx;
         TimeOfDay start_time;
         auto tram = make_shared<TramI>();
-        while(true){
-            cout << "Enter tram id: ";
-            cin >> tram_id;
-            if(cin.fail() || tram_id < 0){
-                cout << "Incorrect value" << endl;
-                if(cin.fail()){
-                    cin.clear();
-                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                }
-                continue;
-            }
-            break;
-        }
         while(true){
             int i=0;
             for(auto line :lines){
@@ -188,7 +185,7 @@ int main(int argc, char* argv[]){
         tram_proxy = Ice::checkedCast<TramPrx>(adapter->addWithUUID(tram));
         adapter->activate();
         auto current_line = lines[line_inedx];
-        tram->startTram(tram_id, current_line, start_time);
+        tram->startTram(train_id, current_line, start_time);
         tram->createSchedule();
         ctrlCHandler.setCallback([&ich, &tram](int signal){
             tram->exitLine();
