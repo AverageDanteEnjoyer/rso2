@@ -172,9 +172,11 @@ int main(int argc, char* argv[]){
         }
 
         while (true){
-            cout<<"Set Time :";
+            cout<<"Please, provide the start time in format [hh:mm]"<<endl;
             int hours,minutes;
-            cin>>hours>>minutes;
+            char separator;
+
+            cin>>hours>>separator>>minutes;
             if(cin.fail() || hours < 0 || hours>24 || minutes<0 || minutes>60){
                 cout << "Incorrect value" << endl;
                 if(cin.fail()){
