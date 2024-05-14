@@ -6,6 +6,7 @@
 #include <thread>
 #include <Ice/Proxy.h>
 #include <cstdlib>
+#include <random>
 
 using namespace std;
 using namespace MPK;
@@ -69,8 +70,13 @@ public:
     void createSchedule(){
         auto stops=currentLine->getStops();
        int offset=0;
+
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(4, 20);
+
         for(auto stop:stops){
-            offset+=10;
+            offset += dis(gen);
             tram_shedule.push_back(ScheduleItem{.stop=stop,.time=createTIme(startTime,offset)});
         }
 

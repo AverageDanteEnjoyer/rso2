@@ -6,6 +6,8 @@
 #include <thread>
 #include <string>
 #include <Ice/Proxy.h>
+#include <memory>
+#include <algorithm>
 
 using namespace std;
 using namespace MPK;
@@ -16,14 +18,15 @@ public:
 
     void updateStop(TramPrxPtr tram, ::std::shared_ptr <StopPrx> stop, const ::Ice::Current &current) {
         for (auto myStop:tram->getSchedule()) {
-            cout << tram->getID() << " Subscription from " << myStop.stop->getName() << ", next tram arrives at " << myStop.time.hour << ":"
+            cout << tram->getID() << " Subscription from " << myStop.stop->getName() << ", next tram arrives at "
+                 << myStop.time.hour << ":"
                  << myStop.time.minute << endl;
         }
     }
 
     void updateSchedule(StopPrxPtr stop, arrivals arr, const ::Ice::Current &current) {
         for (auto myTram:stop->getArrivals()) {
-            cout <<"Tram: "<<myTram.tram->getID()<< " will soon reach " << stop->getName() << " at "
+            cout << "Tram: " << myTram.tram->getID() << " will soon reach " << stop->getName() << " at "
                  << myTram.time.hour << ":" << myTram.time.minute << endl;
         }
     }
@@ -85,13 +88,13 @@ int main(int argc, char *argv[]) {
                         for (auto stop : line->getStops()) {
                             bool found = false;
 
-                            for (const auto& subscribed_stop: subscribed_stops) {
+                            for (const auto &subscribed_stop: subscribed_stops) {
                                 if (*subscribed_stop == *stop) {
                                     found = true;
                                     break;
                                 }
                             }
-                            if(!found){
+                            if (!found) {
                                 cout << "stop " << stop->getID() << " " << stop->getName() << endl;
                             }
                         }
@@ -100,13 +103,13 @@ int main(int argc, char *argv[]) {
                         for (auto tram : line->getTrams()) {
                             bool found = false;
 
-                            for (const auto& subscribed_tram: subscribed_trams) {
+                            for (const auto &subscribed_tram: subscribed_trams) {
                                 if (*subscribed_tram == *tram) {
                                     found = true;
                                     break;
                                 }
                             }
-                            if(!found){
+                            if (!found) {
                                 cout << "tram " << tram->getID() << endl;
                             }
                         }
@@ -127,11 +130,11 @@ int main(int argc, char *argv[]) {
                         }
                         break;
                     }
-                    if(subChoice == "q")break;
+                    if (subChoice == "q")break;
 
                     if (subChoice == "stop") {
-                        if(!sip_proxy->getStop(id)){
-                            cout<<"No such stop"<<endl;
+                        if (!sip_proxy->getStop(id)) {
+                            cout << "No such stop" << endl;
                         }
                         sip_proxy->getStop(id)->registerUser(user_proxy);
                         subscribed_stops.push_back(sip_proxy->getStop(id));
@@ -153,8 +156,15 @@ int main(int argc, char *argv[]) {
                     for (auto stop:subscribed_stops) {
                         cout << "stop " << stop->getID() << " " << stop->getName() << endl;
                     }
-                    for (auto tram:subscribed_trams) {
-                        cout << "tram " << tram->getID() << endl;
+                    for (auto it = subscribed_trams.begin(); it != subscribed_trams.end(); ) {
+                        try {
+                            int id = (*it)->getID();
+                            std::cout << "tram " << id << std::endl;
+                            ++it;
+                        } catch (const std::exception& e) {
+                            std::cerr << "The tram has finished Its route. Removing tram from subscribed_trams." << std::endl;
+                            it = subscribed_trams.erase(it);
+                        }
                     }
                     string subChoice;
                     int id;
@@ -172,7 +182,7 @@ int main(int argc, char *argv[]) {
                         }
                         break;
                     }
-                    if(subChoice == "q")break;
+                    if (subChoice == "q")break;
 
                     if (subChoice == "stop") {
                         sip_proxy->getStop(id)->unregisterUser(user_proxy);
